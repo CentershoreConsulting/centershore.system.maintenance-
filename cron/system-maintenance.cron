@@ -1,0 +1,18 @@
+# Centershore System Maintenance - Cron Configuration
+# This file can be installed in /etc/cron.d/
+
+# System maintenance runs daily at 2:00 AM
+# Adjust the time as needed for your system
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=root
+
+# Full system maintenance daily at 2 AM
+0 2 * * * root /opt/system-maintenance/system-maintenance.sh >> /var/log/system-maintenance.log 2>&1
+
+# Weekly deep cleanup on Sunday at 3 AM
+0 3 * * 0 root /opt/system-maintenance/system-maintenance.sh --cleanup-only >> /var/log/system-maintenance.log 2>&1
+
+# Twice daily security-only updates at 1 AM and 1 PM (13:00)
+0 1 * * * root /opt/system-maintenance/system-maintenance.sh --security-only >> /var/log/system-maintenance.log 2>&1
+0 13 * * * root /opt/system-maintenance/system-maintenance.sh --security-only >> /var/log/system-maintenance.log 2>&1
