@@ -14,7 +14,14 @@ update_system() {
     
     # Update package lists and install updates
     log_debug "Installing package updates with ${pkg_mgr}..."
-    ${pkg_mgr} update -y --skip-broken || log_error "Failed to update packages"
+    
+    if [[ "${pkg_mgr}" == "dnf" ]]; then
+        # DNF (Fedora 22+) - doesn't support --skip-broken
+        ${pkg_mgr} update -y || log_error "Failed to update packages"
+    else
+        # YUM (CentOS/RHEL) - supports --skip-broken
+        ${pkg_mgr} update -y --skip-broken || log_error "Failed to update packages"
+    fi
     
     # Install any available group updates
     log_debug "Checking for group updates..."
@@ -34,8 +41,16 @@ update_security() {
     
     # Install security updates only
     log_debug "Installing security updates with ${pkg_mgr}..."
-    ${pkg_mgr} update --security -y --skip-broken || \
-        log_error "Failed to install security updates"
+    
+    if [[ "${pkg_mgr}" == "dnf" ]]; then
+        # DNF (Fedora 22+)
+        ${pkg_mgr} update --security -y || \
+            log_error "Failed to install security updates"
+    else
+        # YUM (CentOS/RHEL)
+        ${pkg_mgr} update --security -y --skip-broken || \
+            log_error "Failed to install security updates"
+    fi
     
     log_success "RedHat/CentOS/Fedora security updates completed"
 }
