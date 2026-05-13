@@ -6,12 +6,25 @@
 # across multiple Linux distributions.
 #
 # Usage: sudo ./system-maintenance.sh [OPTIONS]
+#        sudo system-maintenance [OPTIONS]
 ################################################################################
 
 set -euo pipefail
 
-# Script configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Script configuration - Resolve to actual script location, not symlink
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+if [[ -L "${SCRIPT_PATH}" ]]; then
+    # If this is a symlink, resolve to the actual file
+    SCRIPT_PATH="$(readlink -f "${SCRIPT_PATH}")"
+fi
+SCRIPT_DIR="$(cd "$(dirname "${SCRIPT_PATH}")" && pwd)"
+
+# Installation directory (for when running via symlink)
+INSTALL_DIR="/opt/system-maintenance"
+if [[ ! -d "${SCRIPT_DIR}/lib" ]] && [[ -d "${INSTALL_DIR}/lib" ]]; then
+    SCRIPT_DIR="${INSTALL_DIR}"
+fi
+
 LOG_DIR="/var/log/system-maintenance"
 LOG_FILE="/var/log/system-maintenance.log"
 LOCK_FILE="/var/run/system-maintenance.lock"
@@ -71,7 +84,7 @@ print_help() {
     cat << EOF
 ${BLUE}Centershore System Maintenance${NC}
 
-Usage: sudo $0 [OPTIONS]
+Usage: sudo system-maintenance [OPTIONS]
 
 Options:
     --security-only      Only apply security updates
@@ -84,13 +97,13 @@ Options:
 
 Examples:
     # Full maintenance
-    sudo $0
+    sudo system-maintenance
     
     # Security updates only
-    sudo $0 --security-only
+    sudo system-maintenance --security-only
     
     # Dry-run to preview
-    sudo $0 --dry-run
+    sudo system-maintenance --dry-run
 
 EOF
 }
@@ -184,6 +197,8 @@ load_distro_utils() {
     
     if [[ ! -f "${utils_lib}" ]]; then
         log_error "Common utilities library not found: ${utils_lib}"
+        log_error "Script directory: ${SCRIPT_DIR}"
+        log_error "Looking for libs in: ${SCRIPT_DIR}/lib/"
         exit 1
     fi
     source "${utils_lib}"
@@ -309,7 +324,7 @@ generate_report() {
     log_info "Kernel: $(uname -r)"
     log_info ""
     log_info "Disk Usage:"
-    df -h | tail -n +2 | awk '{log_info "  " $0}'
+    df -h | tail -n +2 | awk '{print "  " $0}' >> "${LOG_FILE}"
     log_info ""
     log_info "System Uptime:"
     uptime >> "${LOG_FILE}"
@@ -329,6 +344,7 @@ main() {
     log_info "============================================"
     log_info "Centershore System Maintenance Started"
     log_info "============================================"
+    log_info "Script directory: ${SCRIPT_DIR}"
     log_info "Dry-run mode: ${DRY_RUN}"
     log_info "Verbose logging: ${VERBOSE}"
     
