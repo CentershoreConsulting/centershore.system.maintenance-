@@ -210,6 +210,10 @@ load_distro_utils() {
         rhel|centos|fedora)
             utils_lib="${SCRIPT_DIR}/lib/redhat-utils.sh"
             ;;
+        amzn)
+            # Amazon Linux 2 and 2023
+            utils_lib="${SCRIPT_DIR}/lib/amazonlinux-utils.sh"
+            ;;
         arch)
             utils_lib="${SCRIPT_DIR}/lib/arch-utils.sh"
             ;;
